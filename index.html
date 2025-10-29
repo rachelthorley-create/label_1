@@ -1,121 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Label Generator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 40px;
-    }
-    form {
-      margin-bottom: 20px;
-    }
-    canvas {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-  </style>
-</head>
-<body>
-  <h2>Label Generator</h2>
-  <form id="labelForm">
-    <label>Line 1 (bold): <input id="line1" type="text" placeholder="First line" required></label><br><br>
-    <label>Line 2 (italic): <input id="line2" type="text" placeholder="Second line"></label><br><br>
-    <label>Line 3 (regular): <input id="line3" type="text" placeholder="Third line"></label><br><br>
-    <button type="submit">Generate Label</button>
-  </form>
+<script>
+  const mmToPx = mm => mm * 3.78;
 
-  <canvas id="labelCanvas" width="378" height="283"></canvas>
+  const canvas = document.getElementById('labelCanvas');
+  const ctx = canvas.getContext('2d');
 
-  <script>
-    const mmToPx = mm => mm * 3.78;
+  document.getElementById('labelForm').addEventListener('submit', e => {
+    e.preventDefault();
 
-    const canvas = document.getElementById('labelCanvas');
-    const ctx = canvas.getContext('2d');
+    const w = mmToPx(100);
+    const h = mmToPx(75);
+    const cornerR = mmToPx(2);
+    const circleR = mmToPx(3);
+    const circleTop = mmToPx(6);
+    const margin = mmToPx(5); // smaller outer margin
 
-    document.getElementById('labelForm').addEventListener('submit', e => {
-      e.preventDefault();
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const w = mmToPx(100);
-      const h = mmToPx(75);
-      const cornerR = mmToPx(2);
-      const circleR = mmToPx(3);
-      const circleTop = mmToPx(6);
-      const margin = mmToPx(4); // smaller margin than before, 5 = 5mm
+    // Draw rounded rectangle (black)
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.moveTo(cornerR, 0);
+    ctx.lineTo(w - cornerR, 0);
+    ctx.quadraticCurveTo(w, 0, w, cornerR);
+    ctx.lineTo(w, h - cornerR);
+    ctx.quadraticCurveTo(w, h, w - cornerR, h);
+    ctx.lineTo(cornerR, h);
+    ctx.quadraticCurveTo(0, h, 0, h - cornerR);
+    ctx.lineTo(0, cornerR);
+    ctx.quadraticCurveTo(0, 0, cornerR, 0);
+    ctx.closePath();
+    ctx.fill();
 
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw white circle
+    const circleY = circleTop + circleR;
+    ctx.beginPath();
+    ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
 
-      // Draw black rounded rectangle
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.moveTo(cornerR, 0);
-      ctx.lineTo(w - cornerR, 0);
-      ctx.quadraticCurveTo(w, 0, w, cornerR);
-      ctx.lineTo(w, h - cornerR);
-      ctx.quadraticCurveTo(w, h, w - cornerR, h);
-      ctx.lineTo(cornerR, h);
-      ctx.quadraticCurveTo(0, h, 0, h - cornerR);
-      ctx.lineTo(0, cornerR);
-      ctx.quadraticCurveTo(0, 0, cornerR, 0);
-      ctx.closePath();
-      ctx.fill();
+    // Gather lines and their styles
+    const lines = [
+      { text: document.getElementById('line1').value, style: 'bold', size: 50 },
+      { text: document.getElementById('line2').value, style: 'italic', size: 30 },
+      { text: document.getElementById('line3').value, style: 'normal', size: 30 }
+    ].filter(l => l.text.trim() !== '');
 
-      // Draw white circle
-      const circleY = circleTop + circleR;
-      ctx.beginPath();
-      ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
-      ctx.fill();
+    const numLines = lines.length;
+    if (numLines === 0) return;
 
-      // Get input lines //You can control each line’s font size via size: in the lines array
-      const lines = [
-        { text: document.getElementById('line1').value, style: 'bold', size: 40 },
-        { text: document.getElementById('line2').value, style: 'italic', size: 30 },
-        { text: document.getElementById('line3').value, style: 'normal', size: 30 }
-      ].filter(l => l.text.trim() !== '');
+    // Individual vertical gaps (in px) between lines
+    // You can fine-tune these values independently
+    const gap12 = mmToPx(4); // space between line 1 and 2
+    const gap23 = mmToPx(3); // space between line 2 and 3
 
-      const numLines = lines.length;
-      if (numLines === 0) return;
-
-      // Define vertical text region: from bottom of circle to bottom of label
-      const topTextY = circleY + circleR + mmToPx(0); // a bit below circle. Want the text closer to the circle? Reduce this:
-      const bottomTextY = h - margin;
-      const availableHeight = bottomTextY - topTextY;
-
-      // Compute total text block height (each line + spacing)
-      const lineSpacing = 1.5; // 120% line height Line spacing = 150% of font size for balance.
-      const totalFontHeight = lines.reduce((sum, l) => sum + l.size * lineSpacing, 0);
-
-      // Vertical offset to center text block between circle bottom and label bottom
-      let startY = topTextY + (availableHeight - totalFontHeight) / 2;
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#fff';
-
-      lines.forEach((line, i) => {
-        const y = startY + line.size * lineSpacing * (i + 1) - line.size * 0.2; // small tweak for baseline
-
-        // Set font style
-        ctx.font = `${line.style} ${line.size}px Arial`;
-
-        // Fit horizontally inside margins
-        const maxWidth = w - 2 * margin;
-        let textWidth = ctx.measureText(line.text).width;
-        const scaleX = Math.min(1, maxWidth / textWidth);
-
-        ctx.save();
-        ctx.translate(w / 2, y);
-        ctx.scale(scaleX, 1);
-        ctx.fillText(line.text, 0, 0);
-        ctx.restore();
-      });
-    });
-  </script>
-</body>
-</html>
+    // Compute total height of the text block
+    let totalHeight = 0;
+    lines.forEach((l, i) => {
+      totalHeight += l.si
