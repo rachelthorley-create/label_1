@@ -43,4 +43,143 @@
 <body>
 
   <h2>Interactive Label Generator</h2>
-  <div id="in
+  <div id="instructions">
+    Enter the text you want for each line. All lines are optional, so just fill in what you want.
+  </div>
+
+  <form id="labelForm">
+    <label>Line 1 (bold, large): <input id="line1" type="text" value="1st line"></label>
+    <label>Line 2 (italic, small): <input id="line2" type="text" value="2nd line"></label>
+    <label>Line 3 (regular, small): <input id="line3" type="text" value="3rd line"></label>
+
+    <div class="slider-container">
+      <label>Large text size: <span id="largeSizeLabel">50</span>
+        <input id="largeSize" type="range" min="20" max="100" value="50">
+      </label>
+    </div>
+    <div class="slider-container">
+      <label>Small text size: <span id="smallSizeLabel">30</span>
+        <input id="smallSize" type="range" min="10" max="60" value="30">
+      </label>
+    </div>
+
+    <button type="submit">Generate Label</button>
+  </form>
+
+  <canvas id="labelCanvas" width="378" height="283"></canvas>
+
+  <script>
+    const mmToPx = mm => mm * 3.78;
+    const canvas = document.getElementById('labelCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const line1Input = document.getElementById('line1');
+    const line2Input = document.getElementById('line2');
+    const line3Input = document.getElementById('line3');
+    const largeSlider = document.getElementById('largeSize');
+    const smallSlider = document.getElementById('smallSize');
+    const largeLabel = document.getElementById('largeSizeLabel');
+    const smallLabel = document.getElementById('smallSizeLabel');
+
+    function drawLabel() {
+      const w = mmToPx(100);
+      const h = mmToPx(75);
+      const cornerR = mmToPx(2);
+      const circleR = mmToPx(3);
+      const circleTop = mmToPx(6);
+      const margin = mmToPx(5);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw background
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.moveTo(cornerR, 0);
+      ctx.lineTo(w - cornerR, 0);
+      ctx.quadraticCurveTo(w, 0, w, cornerR);
+      ctx.lineTo(w, h - cornerR);
+      ctx.quadraticCurveTo(w, h, w - cornerR, h);
+      ctx.lineTo(cornerR, h);
+      ctx.quadraticCurveTo(0, h, 0, h - cornerR);
+      ctx.lineTo(0, cornerR);
+      ctx.quadraticCurveTo(0, 0, cornerR, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw white circle
+      const circleY = circleTop + circleR;
+      ctx.beginPath();
+      ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+
+      // Prepare lines
+      const lines = [
+        { text: line1Input.value.trim(), style: 'bold', size: parseInt(largeSlider.value) },
+        { text: line2Input.value.trim(), style: 'italic', size: parseInt(smallSlider.value) },
+        { text: line3Input.value.trim(), style: 'normal', size: parseInt(smallSlider.value) }
+      ].filter(l => l.text !== '');
+
+      if (lines.length === 0) return;
+
+      const gap12 = mmToPx(4);
+      const gap23 = mmToPx(3);
+
+      const topTextY = circleY + circleR + mmToPx(2);
+      const bottomTextY = h - margin;
+      const availableHeight = bottomTextY - topTextY;
+
+      // Calculate total height including gaps
+      let totalHeight = 0;
+      lines.forEach((l, i) => {
+        totalHeight += l.size;
+        if (i === 0 && lines.length > 1) totalHeight += gap12;
+        if (i === 1 && lines.length > 2) totalHeight += gap23;
+      });
+
+      // Start Y so text block is vertically centered
+      let currentY = topTextY + (availableHeight - totalHeight) / 2 + lines[0].size * 0.75;
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+
+      lines.forEach((line, i) => {
+        ctx.font = `${line.style} ${line.size}px Arial`;
+
+        const maxWidth = w - 2 * margin;
+        const textWidth = ctx.measureText(line.text).width;
+        const scaleX = Math.min(1, maxWidth / textWidth);
+
+        ctx.save();
+        ctx.translate(w / 2, currentY);
+        ctx.scale(scaleX, 1);
+        ctx.fillText(line.text, 0, 0);
+        ctx.restore();
+
+        if (i === 0 && lines.length > 1) currentY += gap12 + lines[1].size;
+        if (i === 1 && lines.length > 2) currentY += gap23 + lines[2].size;
+      });
+    }
+
+    // Initial draw
+    drawLabel();
+
+    // Form submit
+    document.getElementById('labelForm').addEventListener('submit', e => {
+      e.preventDefault();
+      drawLabel();
+    });
+
+    // Sliders live update
+    largeSlider.addEventListener('input', () => {
+      largeLabel.textContent = largeSlider.value;
+      drawLabel();
+    });
+    smallSlider.addEventListener('input', () => {
+      smallLabel.textContent = smallSlider.value;
+      drawLabel();
+    });
+  </script>
+
+</body>
+</html>
