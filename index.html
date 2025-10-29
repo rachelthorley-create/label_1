@@ -47,12 +47,12 @@
     const cornerR = mmToPx(2);
     const circleR = mmToPx(3);
     const circleTop = mmToPx(6);
-    const margin = mmToPx(5); // smaller outer margin
+    const margin = mmToPx(5); // smaller border
 
-    // Clear canvas
+    // Clear
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw rounded rectangle (black)
+    // Background
     ctx.fillStyle = '#000';
     ctx.beginPath();
     ctx.moveTo(cornerR, 0);
@@ -67,43 +67,41 @@
     ctx.closePath();
     ctx.fill();
 
-    // Draw white circle
+    // White circle
     const circleY = circleTop + circleR;
     ctx.beginPath();
     ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
     ctx.fillStyle = '#fff';
     ctx.fill();
 
-    // Gather lines and their styles
+    // Get lines
     const lines = [
-      { text: document.getElementById('line1').value, style: 'bold', size: 50 },
-      { text: document.getElementById('line2').value, style: 'italic', size: 30 },
-      { text: document.getElementById('line3').value, style: 'normal', size: 30 }
-    ].filter(l => l.text.trim() !== '');
+      { text: document.getElementById('line1').value.trim(), style: 'bold', size: 28 },
+      { text: document.getElementById('line2').value.trim(), style: 'italic', size: 20 },
+      { text: document.getElementById('line3').value.trim(), style: 'normal', size: 20 }
+    ].filter(l => l.text !== '');
 
-    const numLines = lines.length;
-    if (numLines === 0) return;
+    if (lines.length === 0) return;
 
-    // Individual vertical gaps (in px) between lines
-    // You can fine-tune these values independently
-    const gap12 = mmToPx(4); // space between line 1 and 2
-    const gap23 = mmToPx(3); // space between line 2 and 3
+    // Independent gaps (mm → px)
+    const gap12 = mmToPx(4);
+    const gap23 = mmToPx(3);
 
     // Compute total height of the text block
     let totalHeight = 0;
     lines.forEach((l, i) => {
-      totalHeight += l.si
-      if (i === 0 && numLines > 1) totalHeight += gap12;
-      if (i === 1 && numLines > 2) totalHeight += gap23;
+      totalHeight += l.size;
+      if (i === 0 && lines.length > 1) totalHeight += gap12;
+      if (i === 1 && lines.length > 2) totalHeight += gap23;
     });
 
-    // Vertical region for text
+    // Define vertical area (bottom of circle → bottom of label)
     const topTextY = circleY + circleR + mmToPx(2);
     const bottomTextY = h - margin;
     const availableHeight = bottomTextY - topTextY;
 
-    // Start Y so the block is centered
-    let startY = topTextY + (availableHeight - totalHeight) / 2 + lines[0].size;
+    // Center text block vertically
+    let currentY = topTextY + (availableHeight - totalHeight) / 2 + lines[0].size * 0.75;
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
@@ -111,19 +109,20 @@
     lines.forEach((line, i) => {
       ctx.font = `${line.style} ${line.size}px Arial`;
 
+      // Fit width
       const maxWidth = w - 2 * margin;
       const textWidth = ctx.measureText(line.text).width;
       const scaleX = Math.min(1, maxWidth / textWidth);
 
       ctx.save();
-      ctx.translate(w / 2, startY);
+      ctx.translate(w / 2, currentY);
       ctx.scale(scaleX, 1);
       ctx.fillText(line.text, 0, 0);
       ctx.restore();
 
-      // Move down for the next line
-      if (i === 0 && numLines > 1) startY += gap12 + lines[1].size;
-      else if (i === 1 && numLines > 2) startY += gap23 + lines[2].size;
+      // Move down for next line
+      if (i === 0 && lines.length > 1) currentY += gap12 + lines[1].size;
+      if (i === 1 && lines.length > 2) currentY += gap23 + lines[2].size;
     });
   });
 </script>
