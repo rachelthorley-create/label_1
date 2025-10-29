@@ -227,4 +227,24 @@ function updateLabels(){
 
 // Event listeners
 document.getElementById('labelForm').addEventListener('submit',e=>{e.preventDefault(); drawLabel();});
+largeSlider.addEventListener('input',()=>{ updateLabels(); drawLabel();});
+smallSlider.addEventListener('input',()=>{ updateLabels(); drawLabel();});
+line3Slider.addEventListener('input',()=>{ updateLabels(); drawLabel();});
+gap12Slider.addEventListener('input',()=>{ updateLabels(); drawLabel();});
+gap23Slider.addEventListener('input',()=>{ updateLabels(); drawLabel();});
+link23Checkbox.addEventListener('change',()=>{ drawLabel(); });
+
+// Font / style changes
+[font1Select,font2Select,font3Select,bold1,bold2,bold3,italic1,italic2,italic3].forEach(el=>{
+  el.addEventListener('change',()=>drawLabel());
+});
+
+// Initial draw
+updateLabels();
+drawLabel();
+</script>
+
+
+// Event listeners
+document.getElementById('labelForm').addEventListener('submit',e=>{e.preventDefault(); drawLabel();});
 
