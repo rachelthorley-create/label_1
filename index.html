@@ -1,3 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Label Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 40px;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Label Generator</h2>
+  <form id="labelForm">
+    <label>Line 1 (bold): <input id="line1" type="text" placeholder="First line" required></label><br><br>
+    <label>Line 2 (italic): <input id="line2" type="text" placeholder="Second line"></label><br><br>
+    <label>Line 3 (regular): <input id="line3" type="text" placeholder="Third line"></label><br><br>
+    <button type="submit">Generate Label</button>
+  </form>
+
+  <canvas id="labelCanvas" width="378" height="283"></canvas>
+
+
 <script>
   const mmToPx = mm => mm * 3.78;
 
@@ -58,3 +93,37 @@
     let totalHeight = 0;
     lines.forEach((l, i) => {
       totalHeight += l.si
+      if (i === 0 && numLines > 1) totalHeight += gap12;
+      if (i === 1 && numLines > 2) totalHeight += gap23;
+    });
+
+    // Vertical region for text
+    const topTextY = circleY + circleR + mmToPx(2);
+    const bottomTextY = h - margin;
+    const availableHeight = bottomTextY - topTextY;
+
+    // Start Y so the block is centered
+    let startY = topTextY + (availableHeight - totalHeight) / 2 + lines[0].size;
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+
+    lines.forEach((line, i) => {
+      ctx.font = `${line.style} ${line.size}px Arial`;
+
+      const maxWidth = w - 2 * margin;
+      const textWidth = ctx.measureText(line.text).width;
+      const scaleX = Math.min(1, maxWidth / textWidth);
+
+      ctx.save();
+      ctx.translate(w / 2, startY);
+      ctx.scale(scaleX, 1);
+      ctx.fillText(line.text, 0, 0);
+      ctx.restore();
+
+      // Move down for the next line
+      if (i === 0 && numLines > 1) startY += gap12 + lines[1].size;
+      else if (i === 1 && numLines > 2) startY += gap23 + lines[2].size;
+    });
+  });
+</script>
