@@ -46,12 +46,12 @@
       const cornerR = mmToPx(2);
       const circleR = mmToPx(3);
       const circleTop = mmToPx(6);
-      const margin = mmToPx(8);
+      const margin = mmToPx(5); // smaller margin than before
 
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw rounded rectangle background (black)
+      // Draw black rounded rectangle
       ctx.fillStyle = '#000';
       ctx.beginPath();
       ctx.moveTo(cornerR, 0);
@@ -66,46 +66,52 @@
       ctx.closePath();
       ctx.fill();
 
-      // Draw white circle at top center
-      ctx.beginPath();
+      // Draw white circle
       const circleY = circleTop + circleR;
+      ctx.beginPath();
       ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
       ctx.fillStyle = '#fff';
       ctx.fill();
 
-      // Text inputs
+      // Get input lines
       const lines = [
-        { text: document.getElementById('line1').value, style: 'bold', size: 24 },
-        { text: document.getElementById('line2').value, style: 'italic', size: 18 },
-        { text: document.getElementById('line3').value, style: 'normal', size: 18 }
-      ];
+        { text: document.getElementById('line1').value, style: 'bold', size: 28 },
+        { text: document.getElementById('line2').value, style: 'italic', size: 20 },
+        { text: document.getElementById('line3').value, style: 'normal', size: 20 }
+      ].filter(l => l.text.trim() !== '');
 
-      // Text area boundaries
-      const textTop = circleY + mmToPx(8);
-      const textBottom = h - margin;
-      const availableHeight = textBottom - textTop;
-      const lineHeight = availableHeight / lines.length;
+      const numLines = lines.length;
+      if (numLines === 0) return;
+
+      // Define vertical text region: from bottom of circle to bottom of label
+      const topTextY = circleY + circleR + mmToPx(2); // a bit below circle
+      const bottomTextY = h - margin;
+      const availableHeight = bottomTextY - topTextY;
+
+      // Compute total text block height (each line + spacing)
+      const lineSpacing = 1.2; // 120% line height
+      const totalFontHeight = lines.reduce((sum, l) => sum + l.size * lineSpacing, 0);
+
+      // Vertical offset to center text block between circle bottom and label bottom
+      let startY = topTextY + (availableHeight - totalFontHeight) / 2;
 
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fff';
 
       lines.forEach((line, i) => {
-        if (!line.text.trim()) return;
-        // Estimate max width for text inside margin
-        const maxWidth = w - 2 * margin;
+        const y = startY + line.size * lineSpacing * (i + 1) - line.size * 0.2; // small tweak for baseline
 
-        // Determine font size (we can shrink horizontally if needed)
+        // Set font style
         ctx.font = `${line.style} ${line.size}px Arial`;
-        let textWidth = ctx.measureText(line.text).width;
 
-        // If text too wide, apply horizontal scaling
+        // Fit horizontally inside margins
+        const maxWidth = w - 2 * margin;
+        let textWidth = ctx.measureText(line.text).width;
         const scaleX = Math.min(1, maxWidth / textWidth);
-        const x = w / 2;
-        const y = textTop + lineHeight * (i + 0.7);
 
         ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(scaleX, 1); // shrink horizontally if needed
+        ctx.translate(w / 2, y);
+        ctx.scale(scaleX, 1);
         ctx.fillText(line.text, 0, 0);
         ctx.restore();
       });
