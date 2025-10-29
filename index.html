@@ -3,17 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Label Generator</title>
+  <title>Interactive Label Generator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-top: 40px;
+      margin: 20px;
+    }
+    h2 {
+      margin-bottom: 5px;
+    }
+    #instructions {
+      max-width: 600px;
+      text-align: center;
+      margin-bottom: 20px;
     }
     form {
       margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    input[type="text"] {
+      width: 250px;
+      padding: 4px;
+    }
+    .slider-container {
+      margin: 10px 0;
     }
     canvas {
       border: 1px solid #ccc;
@@ -22,135 +41,6 @@
   </style>
 </head>
 <body>
-  <h2>Label Generator</h2>
-  <form id="labelForm">
-    <label>Line 1 (bold): <input id="line1" type="text" placeholder="First line" required></label><br><br>
-    <label>Line 2 (italic): <input id="line2" type="text" placeholder="Second line"></label><br><br>
-    <label>Line 3 (regular): <input id="line3" type="text" placeholder="Third line"></label><br><br>
-    <button type="submit">Generate Label</button>
-  </form>
 
-  <canvas id="labelCanvas" width="378" height="283"></canvas>
-
-
-<script>
-const mmToPx = mm => mm * 3.78;
-
-const canvas = document.getElementById('labelCanvas');
-const ctx = canvas.getContext('2d');
-
-document.getElementById('labelForm').addEventListener('submit', e => {
-  e.preventDefault();
-
-  const w = mmToPx(100);
-  const h = mmToPx(75);
-  const cornerR = mmToPx(2);
-  const circleR = mmToPx(3);
-  const circleTop = mmToPx(6);
-  const margin = mmToPx(5);
-
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // === Draw black rounded rectangle ===
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.moveTo(cornerR, 0);
-  ctx.lineTo(w - cornerR, 0);
-  ctx.quadraticCurveTo(w, 0, w, cornerR);
-  ctx.lineTo(w, h - cornerR);
-  ctx.quadraticCurveTo(w, h, w - cornerR, h);
-  ctx.lineTo(cornerR, h);
-  ctx.quadraticCurveTo(0, h, 0, h - cornerR);
-  ctx.lineTo(0, cornerR);
-  ctx.quadraticCurveTo(0, 0, cornerR, 0);
-  ctx.closePath();
-  ctx.fill();
-
-  // === White circle ===
-  const circleY = circleTop + circleR;
-  ctx.beginPath();
-  ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
-  ctx.fillStyle = '#fff';
-  ctx.fill();
-
-  // === Gather text ===
-  const lines = [
-    { text: document.getElementById('line1').value.trim(), style: 'bold', size: 28 },
-    { text: document.getElementById('line2').value.trim(), style: 'italic', size: 20 },
-    { text: document.getElementById('line3').value.trim(), style: 'normal', size: 20 }
-  ].filter(l => l.text !== '');
-
-  if (lines.length === 0) return;
-
-  // Gaps
-  const gap12 = mmToPx(4);
-  const gap23 = mmToPx(3);
-
-  // === Vertical area between circle and bottom ===
-  const topTextY = circleY + circleR + mmToPx(2);
-  const bottomTextY = h - margin;
-  const availableHeight = bottomTextY - topTextY;
-
-  // Compute total height of text block
-  let totalHeight = 0;
-  lines.forEach((l, i) => {
-    totalHeight += l.size;
-    if (i === 0 && lines.length > 1) totalHeight += gap12;
-    if (i === 1 && lines.length > 2) totalHeight += gap23;
-  });
-
-  // Center block vertically
-  let currentY = topTextY + (availableHeight - totalHeight) / 2 + lines[0].size * 0.75;
-
-  // === DEBUG: Draw text area box ===
-  ctx.strokeStyle = 'red';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(margin, topTextY, w - 2 * margin, availableHeight);
-
-  // === DEBUG: Draw circle centerline ===
-  ctx.beginPath();
-  ctx.moveTo(0, circleY);
-  ctx.lineTo(w, circleY);
-  ctx.strokeStyle = 'blue';
-  ctx.stroke();
-
-  // === Draw text ===
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#fff';
-
-  lines.forEach((line, i) => {
-    ctx.font = `${line.style} ${line.size}px Arial`;
-
-    // Fit horizontally
-    const maxWidth = w - 2 * margin;
-    const textWidth = ctx.measureText(line.text).width;
-    const scaleX = Math.min(1, maxWidth / textWidth);
-
-    // === DEBUG: Draw baseline ===
-    ctx.beginPath();
-    ctx.moveTo(margin, currentY);
-    ctx.lineTo(w - margin, currentY);
-    ctx.strokeStyle = 'lime';
-    ctx.stroke();
-
-    // Draw text
-    ctx.save();
-    ctx.translate(w / 2, currentY);
-    ctx.scale(scaleX, 1);
-    ctx.fillText(line.text, 0, 0);
-    ctx.restore();
-
-    // Move down
-    if (i === 0 && lines.length > 1) currentY += gap12 + lines[1].size;
-    if (i === 1 && lines.length > 2) currentY += gap23 + lines[2].size;
-  });
-
-  // === DEBUG overlay label ===
-  ctx.font = "12px Arial";
-  ctx.fillStyle = "yellow";
-  ctx.textAlign = "left";
-  ctx.fillText("DEBUG: red box=text area, blue=circle, lime=baselines", 10, 15);
-});
-</script>
-
+  <h2>Interactive Label Generator</h2>
+  <div id="in
