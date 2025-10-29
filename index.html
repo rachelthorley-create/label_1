@@ -34,95 +34,123 @@
 
 
 <script>
-  const mmToPx = mm => mm * 3.78;
+const mmToPx = mm => mm * 3.78;
 
-  const canvas = document.getElementById('labelCanvas');
-  const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('labelCanvas');
+const ctx = canvas.getContext('2d');
 
-  document.getElementById('labelForm').addEventListener('submit', e => {
-    e.preventDefault();
+document.getElementById('labelForm').addEventListener('submit', e => {
+  e.preventDefault();
 
-    const w = mmToPx(100);
-    const h = mmToPx(75);
-    const cornerR = mmToPx(2);
-    const circleR = mmToPx(3);
-    const circleTop = mmToPx(6);
-    const margin = mmToPx(5); // smaller border
+  const w = mmToPx(100);
+  const h = mmToPx(75);
+  const cornerR = mmToPx(2);
+  const circleR = mmToPx(3);
+  const circleTop = mmToPx(6);
+  const margin = mmToPx(5);
 
-    // Clear
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Background
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.moveTo(cornerR, 0);
-    ctx.lineTo(w - cornerR, 0);
-    ctx.quadraticCurveTo(w, 0, w, cornerR);
-    ctx.lineTo(w, h - cornerR);
-    ctx.quadraticCurveTo(w, h, w - cornerR, h);
-    ctx.lineTo(cornerR, h);
-    ctx.quadraticCurveTo(0, h, 0, h - cornerR);
-    ctx.lineTo(0, cornerR);
-    ctx.quadraticCurveTo(0, 0, cornerR, 0);
-    ctx.closePath();
-    ctx.fill();
+  // === Draw black rounded rectangle ===
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.moveTo(cornerR, 0);
+  ctx.lineTo(w - cornerR, 0);
+  ctx.quadraticCurveTo(w, 0, w, cornerR);
+  ctx.lineTo(w, h - cornerR);
+  ctx.quadraticCurveTo(w, h, w - cornerR, h);
+  ctx.lineTo(cornerR, h);
+  ctx.quadraticCurveTo(0, h, 0, h - cornerR);
+  ctx.lineTo(0, cornerR);
+  ctx.quadraticCurveTo(0, 0, cornerR, 0);
+  ctx.closePath();
+  ctx.fill();
 
-    // White circle
-    const circleY = circleTop + circleR;
-    ctx.beginPath();
-    ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
+  // === White circle ===
+  const circleY = circleTop + circleR;
+  ctx.beginPath();
+  ctx.arc(w / 2, circleY, circleR, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
 
-    // Get lines
-    const lines = [
-      { text: document.getElementById('line1').value.trim(), style: 'bold', size: 28 },
-      { text: document.getElementById('line2').value.trim(), style: 'italic', size: 20 },
-      { text: document.getElementById('line3').value.trim(), style: 'normal', size: 20 }
-    ].filter(l => l.text !== '');
+  // === Gather text ===
+  const lines = [
+    { text: document.getElementById('line1').value.trim(), style: 'bold', size: 28 },
+    { text: document.getElementById('line2').value.trim(), style: 'italic', size: 20 },
+    { text: document.getElementById('line3').value.trim(), style: 'normal', size: 20 }
+  ].filter(l => l.text !== '');
 
-    if (lines.length === 0) return;
+  if (lines.length === 0) return;
 
-    // Independent gaps (mm → px)
-    const gap12 = mmToPx(4);
-    const gap23 = mmToPx(3);
+  // Gaps
+  const gap12 = mmToPx(4);
+  const gap23 = mmToPx(3);
 
-    // Compute total height of the text block
-    let totalHeight = 0;
-    lines.forEach((l, i) => {
-      totalHeight += l.size;
-      if (i === 0 && lines.length > 1) totalHeight += gap12;
-      if (i === 1 && lines.length > 2) totalHeight += gap23;
-    });
+  // === Vertical area between circle and bottom ===
+  const topTextY = circleY + circleR + mmToPx(2);
+  const bottomTextY = h - margin;
+  const availableHeight = bottomTextY - topTextY;
 
-    // Define vertical area (bottom of circle → bottom of label)
-    const topTextY = circleY + circleR + mmToPx(2);
-    const bottomTextY = h - margin;
-    const availableHeight = bottomTextY - topTextY;
-
-    // Center text block vertically
-    let currentY = topTextY + (availableHeight - totalHeight) / 2 + lines[0].size * 0.75;
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
-
-    lines.forEach((line, i) => {
-      ctx.font = `${line.style} ${line.size}px Arial`;
-
-      // Fit width
-      const maxWidth = w - 2 * margin;
-      const textWidth = ctx.measureText(line.text).width;
-      const scaleX = Math.min(1, maxWidth / textWidth);
-
-      ctx.save();
-      ctx.translate(w / 2, currentY);
-      ctx.scale(scaleX, 1);
-      ctx.fillText(line.text, 0, 0);
-      ctx.restore();
-
-      // Move down for next line
-      if (i === 0 && lines.length > 1) currentY += gap12 + lines[1].size;
-      if (i === 1 && lines.length > 2) currentY += gap23 + lines[2].size;
-    });
+  // Compute total height of text block
+  let totalHeight = 0;
+  lines.forEach((l, i) => {
+    totalHeight += l.size;
+    if (i === 0 && lines.length > 1) totalHeight += gap12;
+    if (i === 1 && lines.length > 2) totalHeight += gap23;
   });
+
+  // Center block vertically
+  let currentY = topTextY + (availableHeight - totalHeight) / 2 + lines[0].size * 0.75;
+
+  // === DEBUG: Draw text area box ===
+  ctx.strokeStyle = 'red';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(margin, topTextY, w - 2 * margin, availableHeight);
+
+  // === DEBUG: Draw circle centerline ===
+  ctx.beginPath();
+  ctx.moveTo(0, circleY);
+  ctx.lineTo(w, circleY);
+  ctx.strokeStyle = 'blue';
+  ctx.stroke();
+
+  // === Draw text ===
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+
+  lines.forEach((line, i) => {
+    ctx.font = `${line.style} ${line.size}px Arial`;
+
+    // Fit horizontally
+    const maxWidth = w - 2 * margin;
+    const textWidth = ctx.measureText(line.text).width;
+    const scaleX = Math.min(1, maxWidth / textWidth);
+
+    // === DEBUG: Draw baseline ===
+    ctx.beginPath();
+    ctx.moveTo(margin, currentY);
+    ctx.lineTo(w - margin, currentY);
+    ctx.strokeStyle = 'lime';
+    ctx.stroke();
+
+    // Draw text
+    ctx.save();
+    ctx.translate(w / 2, currentY);
+    ctx.scale(scaleX, 1);
+    ctx.fillText(line.text, 0, 0);
+    ctx.restore();
+
+    // Move down
+    if (i === 0 && lines.length > 1) currentY += gap12 + lines[1].size;
+    if (i === 1 && lines.length > 2) currentY += gap23 + lines[2].size;
+  });
+
+  // === DEBUG overlay label ===
+  ctx.font = "12px Arial";
+  ctx.fillStyle = "yellow";
+  ctx.textAlign = "left";
+  ctx.fillText("DEBUG: red box=text area, blue=circle, lime=baselines", 10, 15);
+});
 </script>
+
