@@ -138,8 +138,8 @@ toggleAdvancedBtn.addEventListener('click',()=>{
   else{advancedDiv.style.display='none'; toggleAdvancedBtn.textContent='Show Advanced Options';}
 });
 
-// Draw PNG preview
-function updateCanvasPreview() {
+// Draw PNG preview with identical scaling
+function updateCanvasPreview(){
     const w = mmToPx(100);
     const h = mmToPx(75);
     const cornerR = mmToPx(2);
@@ -149,12 +149,12 @@ function updateCanvasPreview() {
     const topMarginExtra = mmToPx(2);
     const textShift = mmToPx(parseInt(textShiftSlider.value));
 
-    const size1 = parseInt(largeSlider.value);
-    const size2 = parseInt(smallSlider.value);
-    const size3 = link23Checkbox.checked ? size2 : parseInt(line3Slider.value);
+    const size1=parseInt(largeSlider.value);
+    const size2=parseInt(smallSlider.value);
+    const size3=link23Checkbox.checked? size2:parseInt(line3Slider.value);
 
-    const gap12 = mmToPx(parseInt(gap12Slider.value));
-    const gap23 = linkGapsCheckbox.checked ? gap12 : mmToPx(parseInt(gap23Slider.value));
+    const gap12=mmToPx(parseInt(gap12Slider.value));
+    const gap23=linkGapsCheckbox.checked? gap12: mmToPx(parseInt(gap23Slider.value));
 
     const lines=[
       {text:line1Input.value.trim(),size:size1,font:font1Select.value,bold:bold1.checked,italic:italic1.checked},
@@ -166,11 +166,11 @@ function updateCanvasPreview() {
     const bottomTextY = h - margin;
     const availableHeight = bottomTextY - topTextY;
     let totalHeight=0;
-    lines.forEach((l,i)=>{ totalHeight+=l.size; if(i===0&&lines.length>1) totalHeight+=gap12; if(i===1&&lines.length>2) totalHeight+=gap23; });
+    lines.forEach((l,i)=>{totalHeight+=l.size;if(i===0&&lines.length>1) totalHeight+=gap12;if(i===1&&lines.length>2) totalHeight+=gap23;});
     let currentY = topTextY + (availableHeight-totalHeight)/2 + (lines[0]?.size||0)*0.75;
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    // Black background
+    // Black background with rounded corners
     ctx.fillStyle='black';
     ctx.beginPath();
     ctx.moveTo(cornerR,0);
@@ -199,9 +199,9 @@ function updateCanvasPreview() {
       if(line.italic) style+='italic ';
       style+=line.size+'px '+line.font;
       ctx.font=style;
-      const maxWidth = w-2*margin;
-      const textWidth = ctx.measureText(line.text).width;
-      const scaleX = Math.min(1,maxWidth/textWidth);
+      const maxWidth=w-2*margin;
+      const textWidth=ctx.measureText(line.text).width;
+      const scaleX=Math.min(1,maxWidth/textWidth);
       ctx.save();
       ctx.translate(w/2,currentY);
       ctx.scale(scaleX,1);
@@ -212,7 +212,7 @@ function updateCanvasPreview() {
     });
 }
 
-// Generate SVG for download
+// Generate SVG exactly matching canvas
 function generateSVGEngraving(){
     const w = mmToPx(100);
     const h = mmToPx(75);
@@ -223,12 +223,12 @@ function generateSVGEngraving(){
     const topMarginExtra = mmToPx(2);
     const textShift = mmToPx(parseInt(textShiftSlider.value));
 
-    const size1 = parseInt(largeSlider.value);
-    const size2 = parseInt(smallSlider.value);
-    const size3 = link23Checkbox.checked ? size2 : parseInt(line3Slider.value);
+    const size1=parseInt(largeSlider.value);
+    const size2=parseInt(smallSlider.value);
+    const size3=link23Checkbox.checked? size2:parseInt(line3Slider.value);
 
-    const gap12 = mmToPx(parseInt(gap12Slider.value));
-    const gap23 = linkGapsCheckbox.checked ? gap12 : mmToPx(parseInt(gap23Slider.value));
+    const gap12=mmToPx(parseInt(gap12Slider.value));
+    const gap23=linkGapsCheckbox.checked? gap12: mmToPx(parseInt(gap23Slider.value));
 
     const lines=[
       {text:line1Input.value.trim(),size:size1,font:font1Select.value,bold:bold1.checked,italic:italic1.checked},
@@ -240,15 +240,33 @@ function generateSVGEngraving(){
     const bottomTextY = h - margin;
     const availableHeight = bottomTextY - topTextY;
     let totalHeight=0;
-    lines.forEach((l,i)=>{ totalHeight+=l.size; if(i===0&&lines.length>1) totalHeight+=gap12; if(i===1&&lines.length>2) totalHeight+=gap23; });
+    lines.forEach((l,i)=>{totalHeight+=l.size;if(i===0&&lines.length>1) totalHeight+=gap12;if(i===1&&lines.length>2) totalHeight+=gap23;});
     let currentY = topTextY + (availableHeight-totalHeight)/2 + (lines[0]?.size||0)*0.75;
 
     let svgParts = [];
     svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`);
     svgParts.push(`<rect x="0" y="0" width="${w}" height="${h}" rx="${cornerR}" ry="${cornerR}" fill="white" stroke="red" stroke-width="1"/>`);
     svgParts.push(`<circle cx="${w/2}" cy="${circleTop+circleR}" r="${circleR}" fill="none" stroke="red" stroke-width="1"/>`);
+
     lines.forEach((line,i)=>{
-      svgParts.push(`<text x="${w/2}" y="${currentY}" font-family="${line.font}" font-size="${line.size}" text-anchor="middle" fill="blue" font-weight="${line.bold?'bold':'normal'}" font-style="${line.italic?'italic':'normal'}">${line.text}</text>`);
+      // Calculate horizontal scale factor
+      const tempCanvas=document.createElement('canvas');
+      const tempCtx=tempCanvas.getContext('2d');
+      let fontStyle='';
+      if(line.bold) fontStyle+='bold ';
+      if(line.italic) fontStyle+='italic ';
+      fontStyle+=line.size+'px '+line.font;
+      tempCtx.font=fontStyle;
+      const maxWidth=w-2*margin;
+      const textWidth=tempCtx.measureText(line.text).width;
+      const scaleX=Math.min(1,maxWidth/textWidth);
+
+      const transform=scaleX<1? ` transform="translate(${w/2},${currentY}) scale(${scaleX},1)"` : '';
+      const x=scaleX<1? 0 : w/2;
+      const y=scaleX<1? 0 : currentY;
+
+      svgParts.push(`<text x="${x}" y="${y}" font-family="${line.font}" font-size="${line.size}" text-anchor="middle" fill="blue" font-weight="${line.bold?'bold':'normal'}" font-style="${line.italic?'italic':'normal'}"${transform}>${line.text}</text>`);
+
       if(i===0&&lines.length>1) currentY+=gap12+lines[1].size;
       if(i===1&&lines.length>2) currentY+=gap23+lines[2].size;
     });
@@ -256,7 +274,7 @@ function generateSVGEngraving(){
     return svgParts.join('\n');
 }
 
-// Update label info
+// Update labels
 function updateLabels(){
     largeLabel.textContent=largeSlider.value;
     smallLabel.textContent=smallSlider.value;
@@ -285,7 +303,7 @@ document.getElementById('downloadBtn').addEventListener('click',()=>{
   link.click();
 });
 
-// Initial draw
+// Initial render
 updateLabels();
 updateCanvasPreview();
 </script>
